@@ -81,17 +81,13 @@ void melt(UInt_t * tgtPix, UInt_t * srcPix, Long_t numPix, double T0, double mel
 		}
 
 		double initialPairDistancePixel1 = colometricDistance(srcPix[randPixel1], tgtPix[randPixel1]);
-		
 		double initialPairDistancePixel2 = colometricDistance(srcPix[randPixel2], tgtPix[randPixel2]);
-		
 		double totalInitialPairDistance = initialPairDistancePixel1 + initialPairDistancePixel2;
+		
 		swap(srcPix[randPixel1], srcPix[randPixel2]);
 
-		
 		double finalPairDistancePixel1 = colometricDistance(srcPix[randPixel1], tgtPix[randPixel1]);
-		
 		double finalPairDistancePixel2 = colometricDistance(srcPix[randPixel2], tgtPix[randPixel2]);
-		
 		double totalFinalPairDistance = finalPairDistancePixel1 + finalPairDistancePixel2;
 	
 		newDist = oldDist-totalInitialPairDistance+totalFinalPairDistance;

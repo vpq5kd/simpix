@@ -13,7 +13,138 @@
 
 #include <iostream>
 #include <stdio.h>
+#include <stdlib.h>
+#include <cmath>
+#include <random>
+#include <csignal>
+#include <cstdio>
+#include <cstdlib>
+
 using namespace std;
+
+//random number generator device
+mt19937 gen(random_device{}());
+int randInt(int a, int b){
+	uniform_int_distribution <> d(a,b);
+	return d(gen);
+}
+
+
+double randDouble(double a, double b){
+	uniform_real_distribution <> d(a,b);
+	return d(gen);
+}
+
+//function to caluclate the relative colormetric distance between two pixels
+double colometricDistance(UInt_t pixel1, UInt_t pixel2){
+	
+	double alpha1 = pixel1 & 0xff000000;
+	double red1 = pixel1 & 0x00ff0000;
+	double green1 = pixel1 & 0x0000ff00;
+	double blue1 = pixel1 & 0x000000ff;
+
+	double alpha2 = pixel2 & 0xff000000;
+	double red2 = pixel2 & 0x00ff0000;
+	double green2 = pixel2 & 0x0000ff00;
+	double blue2 = pixel2 & 0x000000ff;
+
+	double delAlpha = alpha2 - alpha1;
+	double delRed = red2-red1;
+	double delGreen = green2-green1; 
+	double delBlue = blue2-blue1;
+
+
+	double r = sqrt( (delAlpha*delAlpha) + (delRed*delRed) + (delGreen*delGreen) +  (delBlue * delBlue) );
+
+	return r;
+}
+
+//function to calculate total concatenated distance of each pixel pair
+double totalColometricDistance(UInt_t * tgtPix, UInt_t * srcPix, Long_t numPix){
+	double totalDistance = 0.0;
+	for (int i = 0; i<numPix; i++){
+		double pairDistance = colometricDistance(srcPix[i], tgtPix[i]);
+		totalDistance += pairDistance; 
+	}
+
+	return totalDistance;
+}
+
+void melt(UInt_t * tgtPix, UInt_t * srcPix, Long_t numPix, double T0, double meltingIterations){
+	double oldDist = totalColometricDistance(tgtPix, srcPix, numPix);
+	double newDist = 0.0;
+	for (int i = 0; i<numPix; i++){
+		int randPixel1 = randInt(0, numPix-1);
+		int randPixel2 = randInt(0, numPix-1);
+		while (randPixel2 == randPixel1){
+			randPixel2 = randInt(0, numPix-1);
+		}
+		swap(srcPix[randPixel1], srcPix[randPixel2]);
+		
+		newDist = totalColometricDistance(tgtPix, srcPix, numPix);
+		
+		double deltaDist = newDist - oldDist;
+
+		if (deltaDist < 0){
+			oldDist = newDist;
+			continue;
+		}
+		else {
+			double p = exp(-deltaDist/T0);
+			double r = randDouble(0.0, 1.0);
+
+			if (r<p){
+				oldDist = newDist;
+			}
+			swap(srcPix[randPixel1], srcPix[randPixel2]);
+		}		
+
+	}
+	printf("Finished melting\n"); 
+
+}
+
+void simulatedAnnealingTwoOpt(UInt_t * tgtPix, UInt_t * srcPix, Long_t numPix, double temperatureArray [], double distanceArray[], double * dataPoints, double T0, double iterationsPerTemperature){
+	printf("Running twoopt formula\n"); 
+	double T = T0;
+	double oldDist = totalColometricDistance(tgtPix, srcPix, numPix);
+	double newDist = 0.0;
+
+	int distanceArrayIterator = 0;
+	int temperatureArrayIterator = 0;	
+	while(T>0){
+		for (int i = 0; i < iterationsPerTemperature; i++){
+			int randPixel1 = randInt(0, numPix);
+			int randPixel2 = randInt(0, numPix);
+			swap(srcPix[randPixel1], srcPix[randPixel2]);
+			newDist = totalColometricDistance(tgtPix, srcPix, numPix);
+
+			double deltaDist = newDist - oldDist;
+			
+			if (deltaDist < 0){
+				oldDist = newDist;
+				continue;
+			}
+			else {
+				double p = exp(-deltaDist/T);
+				double r = randDouble(0.0,1.0);
+
+				if (r < p){
+					oldDist = newDist;
+					continue;
+				}
+				swap(srcPix[randPixel1], srcPix[randPixel2]);
+			}
+		}
+		distanceArray[distanceArrayIterator] = oldDist;
+		temperatureArray[temperatureArrayIterator] = T;
+		distanceArrayIterator += 1; 
+		temperatureArrayIterator +=1;
+		T-=0.1; 	
+	}
+	*dataPoints = temperatureArrayIterator;
+}
+
 
 int main(int argc, char **argv){
 
@@ -44,21 +175,10 @@ int main(int argc, char **argv){
   // access the pixels for the output image 
   // each pixel is a 32-bit word, 1 byte each for (alpha,red,green,blue)
   // don't touch alpha (bits 31:28)
-  UInt_t *outPix = out->GetArgbArray();  
-
-  // examples of pixel manipulations 
-  for (int i=0;i< numPix; i++){
-    //  outPix[i]&=0xff00ffff;  // turn off red
-    outPix[i]&=0xffff00ff;  // turn off green
-    //  outPix[i]&=0xffffff00;  // turn off blue
-    //  cout << hex << outPix[i]<<endl;  // print pixel values in hex
-  }
-  // flip the image
-  for (int i=0;i< numPix/2; i++){
-    unsigned pxl=outPix[i];
-    outPix[i]=outPix[numPix-i-1];
-    outPix[numPix-i-1]=pxl;
-  }
+  UInt_t *tgtPix = tgt->GetArgbArray();  
+  UInt_t *srcPix = out->GetArgbArray();
+  
+  melt(
 
   // *************************
 

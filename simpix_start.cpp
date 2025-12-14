@@ -79,9 +79,22 @@ void melt(UInt_t * tgtPix, UInt_t * srcPix, Long_t numPix, double T0, double mel
 		while (randPixel2 == randPixel1){
 			randPixel2 = randInt(0, numPix-1);
 		}
-		swap(srcPix[randPixel1], srcPix[randPixel2]);
+
+		double initialPairDistancePixel1 = colometricDistance(srcPix[randPixel1], tgtPix[randPixel1]);
 		
-		newDist = totalColometricDistance(tgtPix, srcPix, numPix);
+		double initialPairDistancePixel2 = colometricDistance(srcPix[randPixel2], tgtPix[randPixel2]);
+		
+		double totalInitialPairDistance = initialPairDistancePixel1 + initialPairDistancePixel2;
+		swap(srcPix[randPixel1], srcPix[randPixel2]);
+
+		
+		double finalPairDistancePixel1 = colometricDistance(srcPix[randPixel1], tgtPix[randPixel1]);
+		
+		double finalPairDistancePixel2 = colometricDistance(srcPix[randPixel2], tgtPix[randPixel2]);
+		
+		double totalFinalPairDistance = finalPairDistancePixel1 + finalPairDistancePixel2;
+	
+		newDist = oldDist-totalInitialPairDistance+totalFinalPairDistance;
 		
 		double deltaDist = newDist - oldDist;
 
@@ -104,20 +117,27 @@ void melt(UInt_t * tgtPix, UInt_t * srcPix, Long_t numPix, double T0, double mel
 
 }
 
-void simulatedAnnealingTwoOpt(UInt_t * tgtPix, UInt_t * srcPix, Long_t numPix, double temperatureArray [], double distanceArray[], double * dataPoints, double T0, double iterationsPerTemperature){
-	printf("Running twoopt formula\n"); 
+void simulatedAnnealingPixelSwap(UInt_t * tgtPix, UInt_t * srcPix, Long_t numPix, double T0, double iterationsPerTemperature){
+	printf("Running pixel swap formula\n"); 
 	double T = T0;
 	double oldDist = totalColometricDistance(tgtPix, srcPix, numPix);
 	double newDist = 0.0;
 
-	int distanceArrayIterator = 0;
-	int temperatureArrayIterator = 0;	
 	while(T>0){
 		for (int i = 0; i < iterationsPerTemperature; i++){
 			int randPixel1 = randInt(0, numPix);
 			int randPixel2 = randInt(0, numPix);
+			double initialPairDistancePixel1 = colometricDistance(srcPix[randPixel1], tgtPix[randPixel1]);
+			double initialPairDistancePixel2 = colometricDistance(srcPix[randPixel2], tgtPix[randPixel2]);
+			double totalInitialPairDistance = initialPairDistancePixel1 + initialPairDistancePixel2;
+			
 			swap(srcPix[randPixel1], srcPix[randPixel2]);
-			newDist = totalColometricDistance(tgtPix, srcPix, numPix);
+			
+			double finalPairDistancePixel1 = colometricDistance(srcPix[randPixel1], tgtPix[randPixel1]);
+			double finalPairDistancePixel2 = colometricDistance(srcPix[randPixel2], tgtPix[randPixel2]);
+			double totalFinalPairDistance = finalPairDistancePixel1 + finalPairDistancePixel2;
+		
+			newDist = oldDist-totalInitialPairDistance+totalFinalPairDistance;
 
 			double deltaDist = newDist - oldDist;
 			
@@ -136,13 +156,8 @@ void simulatedAnnealingTwoOpt(UInt_t * tgtPix, UInt_t * srcPix, Long_t numPix, d
 				swap(srcPix[randPixel1], srcPix[randPixel2]);
 			}
 		}
-		distanceArray[distanceArrayIterator] = oldDist;
-		temperatureArray[temperatureArrayIterator] = T;
-		distanceArrayIterator += 1; 
-		temperatureArrayIterator +=1;
-		T-=0.1; 	
+		T-=.1; 	
 	}
-	*dataPoints = temperatureArrayIterator;
 }
 
 
@@ -178,7 +193,13 @@ int main(int argc, char **argv){
   UInt_t *tgtPix = tgt->GetArgbArray();  
   UInt_t *srcPix = out->GetArgbArray();
   
-  melt(
+  double T0 = 10000;
+  double meltingIterations = 100000;
+  double iterationsPerTemperature = 1000;
+
+  melt(tgtPix, srcPix, numPix, T0, meltingIterations);
+  simulatedAnnealingPixelSwap(tgtPix, srcPix, numPix, T0, iterationsPerTemperature);
+
 
   // *************************
 

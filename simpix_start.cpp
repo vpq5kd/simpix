@@ -14,6 +14,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <cmath>
 #include <random>
 #include <csignal>
@@ -159,6 +160,7 @@ void simulatedAnnealingPixelSwap(UInt_t * tgtPix, UInt_t * srcPix, Long_t numPix
 
 int main(int argc, char **argv){
 
+  clock_t tStart = clock();
   if (argc<3) {
     cout << "Usage: simapix_start image1 image2 <output=out.png>" << endl;
     return 0; 
@@ -196,7 +198,7 @@ int main(int argc, char **argv){
   melt(tgtPix, srcPix, numPix, T0, meltingIterations);
   simulatedAnnealingPixelSwap(tgtPix, srcPix, numPix, T0, iterationsPerTemperature);
 
-
+  printf("Solution execution time: %.2fs\n", (double) (clock()-tStart)/CLOCKS_PER_SEC);
   // *************************
 
 
@@ -211,7 +213,7 @@ int main(int argc, char **argv){
   tgt->Draw("X");
   c1->cd(3);
   out->Draw("X");
-  c1->Print("collage.png");
+  c1->Print("pollockToPollock.png");
   
   // save the new image
   out->WriteImage(fout.Data());

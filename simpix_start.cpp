@@ -105,6 +105,7 @@ void melt(UInt_t * tgtPix, UInt_t * srcPix, Long_t numPix, double T0, double mel
 
 			if (r<p){
 				oldDist = newDist;
+				continue;
 			}
 			swap(srcPix[randPixel1], srcPix[randPixel2]);
 		}		
@@ -213,7 +214,7 @@ int main(int argc, char **argv){
   tgt->Draw("X");
   c1->cd(3);
   out->Draw("X");
-  c1->Print("pollockToPollock.png");
+  c1->Print("scottToRotunda.png");
   
   // save the new image
   out->WriteImage(fout.Data());

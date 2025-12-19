@@ -214,7 +214,7 @@ int main(int argc, char **argv){
   tgt->Draw("X");
   c1->cd(3);
   out->Draw("X");
-  c1->Print("scottToRotunda.png");
+  c1->Print("pollockToPollock.png");
   
   // save the new image
   out->WriteImage(fout.Data());
